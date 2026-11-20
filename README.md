@@ -160,7 +160,7 @@ The week from cutoff 2026-10-31 was kept aside until the design was fixed. Each 
 trained on every week before it with 5 seeds, and the inputs already contain the push outage
 (`final.md`).
 
-| | Copy last week | LightGBM without push inputs (submitted) | LightGBM, all 30 | GNN on users and repositories |
+| | Copy last week | LightGBM without push inputs | LightGBM, all 30 (submitted) | GNN on users and repositories |
 |---|---|---|---|---|
 | Score | 0.345 | 0.410 ± 0.006 | 0.409 ± 0.002 | 0.400 ± 0.025 |
 
@@ -183,8 +183,8 @@ activities like the course does (`reference.md`).
 | GNN without time encoding | 0.357 | | |
 | GNN with time encoding | 0.548 | | |
 | GNN on users and repositories | | 0.504 ± 0.022 | 0.428 ± 0.009 |
-| LightGBM, all 30 | | 0.524 ± 0.001 | 0.438 ± 0.001 |
-| LightGBM without push inputs (submitted) | | 0.502 ± 0.001 | 0.450 ± 0.002 |
+| LightGBM, all 30 (submitted) | | 0.524 ± 0.001 | 0.438 ± 0.001 |
+| LightGBM without push inputs | | 0.502 ± 0.001 | 0.450 ± 0.002 |
 
 Copying last week gives 0.499 here and 0.496 in the course README, which suggests my data and
 user rule are close to what the course used for that week. The best score is the course's
@@ -206,11 +206,13 @@ counts (mean predicted open_pr 0.092 vs 0.073), so they lose more.
 
 ## Submitted model
 
-I submit LightGBM without the six push features, retrained on every complete week from March
-with thresholds picked on the four validation weeks. On the validation weeks it scores the
-same as LightGBM with all 30 features on the five activities without push. It never reads
-push data, so the missing pushes before the test week cannot hurt it. Running `predict.py`
-twice gives the same file.
+I submit LightGBM with all 30 features, retrained on every complete week from March with
+thresholds picked on the four validation weeks. Over all six activities it scores best on the
+validation weeks, the final week and the reference week. On the five activities without push,
+it and LightGBM without push inputs are within 0.012 of each other on every week. If GH Archive
+still misses pushes in the test week, push is not scored, and removing the pushes from the
+inputs cost LightGBM only 0.006 on the other five activities (`outage.md`). Running
+`predict.py` twice gives the same file.
 
 ## Tests
 

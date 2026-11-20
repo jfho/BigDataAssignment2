@@ -126,8 +126,8 @@ def outage(events):
     return table(columns, "LightGBM")
 
 
-MODELS = {"LightGBM, no push inputs (submitted)": variant(lgbm, features=NO_PUSH),
-          "LightGBM, all 30": lgbm, "GNN": gnn}
+MODELS = {"LightGBM, no push inputs": variant(lgbm, features=NO_PUSH),
+          "LightGBM, all 30 (submitted)": lgbm, "GNN": gnn}
 
 
 def one_week(events, t, val_weeks, models=MODELS, seed_range=SEEDS):

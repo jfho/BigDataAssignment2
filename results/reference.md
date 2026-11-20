@@ -1,4 +1,4 @@
-| | Baseline | LightGBM, no push inputs (submitted) | LightGBM, all 30 | GNN |
+| | Baseline | LightGBM, no push inputs | LightGBM, all 30 (submitted) | GNN |
 |---|---|---|---|---|
 | open_pr | 0.395 | 0.454 ± 0.005 | 0.408 ± 0.002 | 0.407 ± 0.024 |
 | open_issue | 0.396 | 0.484 ± 0.004 | 0.470 ± 0.005 | 0.453 ± 0.008 |
