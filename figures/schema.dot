@@ -1,0 +1,98 @@
+// Q1: the 8 tables, primary keys (PK), foreign keys (FK), and one edge per FK -> referenced PK.
+// Users sit on the left and Repositories on the right, so the edges to Users are written
+// Users -> table with dir=back: the arrow still points from the FK to Users' PK.
+// Render: dot -Tpng figures/schema.dot -o figures/schema.png
+digraph schema {
+    rankdir=LR; nodesep=0.15; ranksep=0.5;
+    node [shape=plaintext, fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=9, color="#555555", arrowsize=0.7];
+
+    Users [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#d6e4f0"><b>Users</b></td></tr>
+        <tr><td port="pk" align="left"><u>user_id</u> (PK)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: first_seen_at</font></td></tr></table>>];
+
+    Repositories [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#d6e4f0"><b>Repositories</b></td></tr>
+        <tr><td port="pk" align="left"><u>repo_id</u> (PK)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: first_seen_at</font></td></tr></table>>];
+
+    PullRequests [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#e8e8e8"><b>PullRequests</b></td></tr>
+        <tr><td port="pk" align="left"><u>pr_id</u> (PK)</td></tr>
+        <tr><td port="repo" align="left">repo_id (FK)</td></tr>
+        <tr><td port="author" align="left">author_id (FK)</td></tr>
+        <tr><td port="merged" align="left">merged_by_id (FK, known later)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: first_seen_at</font></td></tr></table>>];
+
+    Issues [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#e8e8e8"><b>Issues</b></td></tr>
+        <tr><td port="pk" align="left"><u>issue_id</u> (PK)</td></tr>
+        <tr><td port="repo" align="left">repo_id (FK)</td></tr>
+        <tr><td port="author" align="left">author_id (FK)</td></tr>
+        <tr><td port="assignee" align="left">assignee_id (FK)</td></tr>
+        <tr><td port="pr" align="left">pull_request_id (FK)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: first_seen_at</font></td></tr></table>>];
+
+    IssueComments [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#fbe5d0"><b>IssueComments</b></td></tr>
+        <tr><td port="pk" align="left"><u>comment_id</u> (PK)</td></tr>
+        <tr><td port="issue" align="left">issue_id (FK)</td></tr>
+        <tr><td port="repo" align="left">repo_id (FK)</td></tr>
+        <tr><td port="author" align="left">author_id (FK)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: created_at</font></td></tr></table>>];
+
+    PRReviews [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#fbe5d0"><b>PRReviews</b></td></tr>
+        <tr><td port="pk" align="left"><u>review_id</u> (PK)</td></tr>
+        <tr><td port="pr" align="left">pr_id (FK)</td></tr>
+        <tr><td port="repo" align="left">repo_id (FK)</td></tr>
+        <tr><td port="reviewer" align="left">reviewer_id (FK)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: first_seen_at</font></td></tr></table>>];
+
+    PRReviewComments [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#fbe5d0"><b>PRReviewComments</b></td></tr>
+        <tr><td port="pk" align="left"><u>comment_id</u> (PK)</td></tr>
+        <tr><td port="pr" align="left">pr_id (FK)</td></tr>
+        <tr><td port="repo" align="left">repo_id (FK)</td></tr>
+        <tr><td port="author" align="left">author_id (FK)</td></tr>
+        <tr><td port="review" align="left">pull_request_review_id (FK)</td></tr>
+        <tr><td port="reply" align="left">in_reply_to_id (FK)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: created_at</font></td></tr></table>>];
+
+    Pushes [label=<<table border="1" cellborder="0" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#fbe5d0"><b>Pushes</b></td></tr>
+        <tr><td port="pk" align="left"><u>push_id</u> (PK)</td></tr>
+        <tr><td port="user" align="left">user_id (FK)</td></tr>
+        <tr><td port="repo" align="left">repo_id (FK)</td></tr>
+        <tr><td align="left"><font color="#777777">row time: created_at</font></td></tr></table>>];
+
+    // FKs to Users (blue)
+    edge [color="#2a6fc0", dir=back];
+    Users:pk -> PullRequests:author;
+    Users:pk -> PullRequests:merged [style=dashed];
+    Users:pk -> Issues:author;
+    Users:pk -> Issues:assignee;
+    Users:pk -> IssueComments:author;
+    Users:pk -> PRReviews:reviewer;
+    Users:pk -> PRReviewComments:author;
+    Users:pk -> Pushes:user;
+
+    // FKs to Repositories (green)
+    edge [color="#1d9e75", dir=forward];
+    PullRequests:repo -> Repositories:pk;
+    Issues:repo -> Repositories:pk;
+    IssueComments:repo -> Repositories:pk;
+    PRReviews:repo -> Repositories:pk;
+    PRReviewComments:repo -> Repositories:pk;
+    Pushes:repo -> Repositories:pk;
+
+    // FKs between the other tables (grey)
+    edge [color="#555555"];
+    Issues:pr -> PullRequests:pk;
+    IssueComments:issue -> Issues:pk;
+    PRReviews:pr -> PullRequests:pk;
+    PRReviewComments:pr -> PullRequests:pk;
+    PRReviewComments:review -> PRReviews:pk;
+    PRReviewComments:reply -> PRReviewComments:pk;
+}

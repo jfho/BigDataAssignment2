@@ -228,6 +228,13 @@ still misses pushes in the test week, push is not scored, and removing the pushe
 inputs cost LightGBM only 0.006 on the other five activities (`outage.md`). Running
 `predict.py` twice gives the same file.
 
+## Figures
+
+`python figures.py` writes the figures in `figures/`. They show cohort activity per week, how
+often each label is 1 per week, late arrival per activity, F1 against the decision threshold
+and LightGBM's feature importance. The schema graph is written by hand in `schema.dot` and
+rendered when Graphviz is installed.
+
 ## Tests
 
 `pytest` checks that the user rule gives exactly the users of `test_input.csv`, that the
@@ -248,3 +255,4 @@ that my score matches `evaluate.py`.
 | `ghactivity/pipeline.py` | validation, thresholds and retraining, shared by all models |
 | `predict.py` | writes and checks the submission file |
 | `compare.py` | the experiments in the results |
+| `figures.py` | the figures |
