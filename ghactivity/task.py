@@ -18,6 +18,9 @@ TEST_CUTOFF = pd.Timestamp("2026-11-21 16:00")  # 2026-11-22 00:00 in Taiwan
 USER_PICK_TIME = pd.Timestamp("2026-11-04 12:00")
 USER_PICK_GAP = TEST_CUTOFF - USER_PICK_TIME
 
+# the data starts on 2025-12-01 and features look back 90 days
+FIRST_CUTOFF = pd.Timestamp("2026-03-01")
+
 VAL_WEEKS = pd.to_datetime(["2026-10-03 16:00", "2026-10-10 16:00", "2026-10-17 16:00", "2026-10-24 16:00"])
 
 
@@ -71,3 +74,8 @@ def active_users(events, t, min_records=3, days=90):
 def recent_activity(events, t, users, days=7):
     return did_activity(visible(events, t), t - pd.Timedelta(days=days), t, users)
 
+
+def weekly_cutoffs(events, end):
+    last_label_end = min(end, events["seen"].max())
+    weeks = [TEST_CUTOFF - k * LABEL_WINDOW for k in range((TEST_CUTOFF - FIRST_CUTOFF) // LABEL_WINDOW, 0, -1)]
+    return [t for t in weeks if t + LABEL_WINDOW <= last_label_end]

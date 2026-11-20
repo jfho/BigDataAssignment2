@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from ghactivity.data import SCRIPTS_DIR, SUBMISSION_DIR, load_db
+from ghactivity.features import FEATURES, user_features
 from ghactivity.metrics import score
 from ghactivity.task import (
     USER_PICK_TIME, VAL_WEEKS, active_users, activity_events, labels, recent_activity, visible,
@@ -26,6 +27,8 @@ def test_nothing_after_t_is_used(events):
     users = active_users(events, t)
     assert active_users(past, t).equals(users)
     assert recent_activity(past, t, users).equals(recent_activity(events, t, users))
+    assert user_features(past, t, users).equals(user_features(events, t, users))
+    assert list(user_features(events, t, users).columns) == FEATURES
 
 
 def test_same_score_as_evaluate_py(events):

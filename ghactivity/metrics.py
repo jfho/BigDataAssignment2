@@ -1,5 +1,7 @@
 from ghactivity.task import ACTIVITIES
 
+WITHOUT_PUSH = [a for a in ACTIVITIES if a != "push"]
+
 
 def f1(tp, fp, fn):
     # evaluate.py scores an activity with no true and no predicted 1s as 1.0

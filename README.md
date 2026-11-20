@@ -2,8 +2,8 @@
 
 For each test user, the code predicts which of six activities (`open_pr`, `open_issue`,
 `issue_comment`, `pr_review`, `pr_review_comment`, `push`) they do in the test week, 2026-11-22
-00:00 to 11-29 00:00 Taiwan time (2026-11-21 16:00 to 11-28 16:00 UTC). For now it predicts
-that each user repeats what they did in the last 7 days.
+00:00 to 11-29 00:00 Taiwan time (2026-11-21 16:00 to 11-28 16:00 UTC). I compare LightGBM on
+per-user features against copying last week.
 
 ## Data Source
 
@@ -50,10 +50,13 @@ The code runs on Python 3.14 with the versions in `requirements.txt`.
 
 ```bash
 python predict.py
+python compare.py models
 ```
 
-`predict.py` writes the submission `output_315552801.csv` for the users in `test_input.csv`
-and checks the file with the course's `evaluate.py`.
+`predict.py` retrains from scratch with a fixed seed and writes the submission
+`output_315552801.csv` for the users in `test_input.csv`. It then checks the file with the
+course's `evaluate.py`. `compare.py models` scores the baseline and LightGBM on the
+validation weeks and saves the table in `results/`.
 
 ## Method
 
@@ -61,11 +64,51 @@ The test users are the cohort users with at least 3 activities in the 90 days be
 2026-11-04 12:00 UTC, counting only rows visible at that time. This rule gives exactly the
 4,465 users of `test_input.csv`.
 
+For training I build the same task for earlier weeks. A training row is a cutoff t and a
+user, with a cutoff every Saturday 16:00 UTC from March 2026 on, the same weekday and hour
+as the test cutoff. Users are picked with the same rule 17 days and 4 hours before t, which
+is the gap between 2026-11-04 12:00 and the test cutoff. The labels say whether the user did
+each activity in the 7 days from t.
+
 Every activity row has two times, when it happened and its row time, which is when it
-became visible in the data. Anything known at a cutoff t only uses rows whose row time is
-before t. I never read the late-known columns such as `merged_at` and `closed_at`.
+became visible in the data. Features only use rows whose row time is before t. I never read
+the late-known columns such as `merged_at` and `closed_at`.
+
+Each user is described by 30 numbers, the counts of each activity over the last 1, 7, 28
+and 90 days and the days since the last time, capped at 90. LightGBM fits one
+gradient-boosted tree model per activity on these numbers.
+
+To validate, I train on the weeks before 2026-10-03 and score the four weeks from cutoffs
+2026-10-03, 10-10, 10-17 and 10-24. Each activity gets its own decision threshold, picked
+from 0.10 to 0.60 in steps of 0.05, and each week is scored with thresholds picked on the
+other three. Every model runs with 5 seeds.
+
+GH Archive has recorded almost no push events since 2026-10-26. The hour 2026-10-28 12:00,
+for example, contains no PushEvent at all. An activity that GH Archive is missing in the
+test week is not scored, and the push labels of the latest weeks are broken anyway. So I
+compare designs on the score of the other five activities, the same as `evaluate.py --skip
+push`, and report the score over all six as well.
+
+## Submitted model
+
+I submit LightGBM retrained on every complete week from March, with thresholds picked on the
+four validation weeks.
 
 ## Tests
 
 `pytest` checks that the user rule gives exactly the users of `test_input.csv`, that the
-baseline uses nothing after the cutoff, and that my score matches `evaluate.py`.
+baseline and the user features use nothing after the cutoff, and that my score matches
+`evaluate.py`.
+
+## Code
+
+| File | What it does |
+|---|---|
+| `ghactivity/data.py` | where the course files and tables are, loads the 8 tables |
+| `ghactivity/task.py` | activity events, test-user rule, labels, weekly cutoffs, baseline |
+| `ghactivity/features.py` | the 30 per-user features at a cutoff, and the training table |
+| `ghactivity/metrics.py` | F1 and the official score |
+| `ghactivity/lgbm.py` | the LightGBM models |
+| `ghactivity/pipeline.py` | validation, thresholds and retraining |
+| `predict.py` | writes and checks the submission file |
+| `compare.py` | the experiments in the results |

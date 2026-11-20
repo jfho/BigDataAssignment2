@@ -4,8 +4,10 @@ import sys
 
 import pandas as pd
 
+from ghactivity import lgbm
 from ghactivity.data import SCRIPTS_DIR, SUBMISSION_DIR, load_db
-from ghactivity.task import ACTIVITIES, TEST_CUTOFF, activity_events, recent_activity
+from ghactivity.pipeline import to_labels, train_for_week
+from ghactivity.task import ACTIVITIES, TEST_CUTOFF, activity_events
 
 
 def main():
@@ -17,7 +19,10 @@ def main():
     users = pd.read_csv(test_input)["UserID"]
     events = activity_events(load_db())
 
-    pred = recent_activity(events, TEST_CUTOFF, users)
+    fitted, thresholds = train_for_week(lgbm, events, TEST_CUTOFF)
+    print("thresholds:", thresholds, flush=True)
+
+    pred = to_labels(lgbm.predict(fitted, events, TEST_CUTOFF, users), thresholds)
     pred[ACTIVITIES].rename_axis("UserID").reset_index().to_csv(args.out, index=False)
 
     check = [sys.executable, SCRIPTS_DIR / "evaluate.py", "--pred", args.out, "--input", test_input]
