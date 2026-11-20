@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ghactivity import lgbm
+from ghactivity import gnn, lgbm
 from ghactivity.data import load_db
 from ghactivity.features import FEATURES, NO_PUSH
 from ghactivity.metrics import WITHOUT_PUSH, score
@@ -58,7 +58,7 @@ def models(events):
                       names=["cutoff"])
     baseline = pd.concat({t: recent_activity(events, t, truth.xs(t).index) for t in VAL_WEEKS}, names=["cutoff"])
     columns = {"Baseline": summary(baseline, truth).to_frame(),
-               "LightGBM": seeds("LightGBM", lgbm, events)}
+               "LightGBM": seeds("LightGBM", lgbm, events), "GNN": seeds("GNN", gnn, events)}
     return table(columns, "Baseline")
 
 

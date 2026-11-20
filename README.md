@@ -3,7 +3,8 @@
 For each test user, the code predicts which of six activities (`open_pr`, `open_issue`,
 `issue_comment`, `pr_review`, `pr_review_comment`, `push`) they do in the test week, 2026-11-22
 00:00 to 11-29 00:00 Taiwan time (2026-11-21 16:00 to 11-28 16:00 UTC). I compare LightGBM on
-per-user features against copying last week.
+per-user features and a graph neural network on users and repositories against copying
+last week.
 
 ## Data Source
 
@@ -36,6 +37,7 @@ python assignment2/scripts/preprocess.py --raw gharchive --out data
 cd BigDataAssignment2
 python -m venv .venv
 source .venv/bin/activate
+pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
 
@@ -57,7 +59,8 @@ python compare.py window
 
 `predict.py` retrains from scratch with a fixed seed and writes the submission
 `output_315552801.csv` for the users in `test_input.csv`. It then checks the file with the
-course's `evaluate.py`. `compare.py <experiment>` runs one of the experiments below and saves
+course's `evaluate.py`. With `--model gnn` it uses the GNN on users and repositories instead.
+`compare.py <experiment>` runs one of the experiments below and saves
 its table in `results/`. Without an argument it lists them.
 
 ## Method
@@ -79,6 +82,14 @@ the late-known columns such as `merged_at` and `closed_at`.
 Each user is described by 30 numbers, the counts of each activity over the last 1, 7, 28
 and 90 days and the days since the last time, capped at 90. LightGBM fits one
 gradient-boosted tree model per activity on these numbers.
+
+The GNN on users and repositories builds one graph per cutoff from the last 90 days. User
+nodes carry the same 30 numbers and repository nodes their activity counts over 7, 28 and
+90 days. A user and a repository they worked in are linked by one edge per activity, in both
+directions. In each of the two message-passing layers, a node's new vector is a linear map of
+its own vector plus the mean of its neighbours' messages. A last layer gives one output per
+activity. A second version has edges that also carry how often and how recently the user
+worked there.
 
 To validate, I train on the weeks before 2026-10-03 and score the four weeks from cutoffs
 2026-10-03, 10-10, 10-17 and 10-24. Each activity gets its own decision threshold, picked
@@ -102,6 +113,7 @@ group.
 |---|---|---|---|
 | Models (`models.md`) | copy last week | 0.368 | |
 | | LightGBM | 0.428 ± 0.003 | 4 of 4 |
+| | GNN on users and repositories | 0.422 ± 0.006 | 4 of 4 |
 | Feature windows (`features.md`, LightGBM) | last 90 days only | 0.385 ± 0.003 | |
 | | last 7 days only | 0.380 ± 0.001 | 1 of 4 |
 | | 1, 7, 28 and 90 days | 0.425 ± 0.002 | 4 of 4 |
@@ -123,12 +135,12 @@ weeks are.
 ## Submitted model
 
 I submit LightGBM retrained on every complete week from March, with thresholds picked on the
-four validation weeks.
+four validation weeks. Running `predict.py` twice gives the same file.
 
 ## Tests
 
 `pytest` checks that the user rule gives exactly the users of `test_input.csv`, that the
-baseline and the user features use nothing after the cutoff, and that my score matches
+baseline, the user features and the graphs use nothing after the cutoff, and that my score matches
 `evaluate.py`.
 
 ## Code
@@ -140,6 +152,7 @@ baseline and the user features use nothing after the cutoff, and that my score m
 | `ghactivity/features.py` | the 30 per-user features at a cutoff, and the training table |
 | `ghactivity/metrics.py` | F1 and the official score |
 | `ghactivity/lgbm.py` | the LightGBM models |
+| `ghactivity/gnn.py` | the GNN on users and repositories |
 | `ghactivity/pipeline.py` | validation, thresholds and retraining |
 | `predict.py` | writes and checks the submission file |
 | `compare.py` | the experiments in the results |
