@@ -14,8 +14,10 @@ def variant(model, **options):
     return SimpleNamespace(fit=partial(model.fit, **options), predict=model.predict)
 
 
-def validate(model, events, seed=0):
-    fitted = model.fit(events, weekly_cutoffs(events, VAL_WEEKS[0]), seed)
+def validate(model, events, seed=0, cutoffs=None):
+    if cutoffs is None:
+        cutoffs = weekly_cutoffs(events, VAL_WEEKS[0])
+    fitted = model.fit(events, cutoffs, seed)
     prob, truth = {}, {}
     for t in VAL_WEEKS:
         users = active_users(events, t - USER_PICK_GAP)

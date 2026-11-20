@@ -52,6 +52,7 @@ The code runs on Python 3.14 with the versions in `requirements.txt`.
 python predict.py
 python compare.py models
 python compare.py features
+python compare.py window
 ```
 
 `predict.py` retrains from scratch with a fixed seed and writes the submission
@@ -106,8 +107,18 @@ group.
 | | 1, 7, 28 and 90 days | 0.425 ± 0.002 | 4 of 4 |
 | | and days since last (all 30) | 0.428 ± 0.003 | 4 of 4 |
 | | all 30 except the 6 push features | 0.427 ± 0.002 | 4 of 4 |
+| Training weeks (`window.md`, LightGBM) | all 30 weeks from March | 0.428 ± 0.003 | |
+| | without June to August | 0.429 ± 0.000 | 2 of 4 |
+| | first 13 weeks (March to May) | 0.423 ± 0.000 | 0 of 4 |
+| | last 13 weeks (July to September) | 0.397 ± 0.000 | 0 of 4 |
+| | last 4 weeks | 0.387 ± 0.000 | 0 of 4 |
 
 Counting each activity over several windows adds about 0.04 over a single window.
+
+The two 13-week windows have the same length, but March to May has 50,400 positive labels
+over the five activities and July to September only 18,406, from more rows (81,200 vs
+107,695). I think the number of positive examples matters more here than how recent the
+weeks are.
 
 ## Submitted model
 

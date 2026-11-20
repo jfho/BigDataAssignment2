@@ -10,6 +10,7 @@ from ghactivity.metrics import WITHOUT_PUSH, score
 from ghactivity.pipeline import held_out_labels, validate, variant
 from ghactivity.task import (
     ACTIVITIES, USER_PICK_GAP, VAL_WEEKS, active_users, activity_events, labels, recent_activity,
+    weekly_cutoffs,
 )
 
 SEEDS = range(5)
@@ -28,10 +29,10 @@ def summary(pred, truth):
     return pd.Series({**{row: pooled[row] for row in ROWS}, **weekly})
 
 
-def seeds(name, model, events):
+def seeds(name, model, events, cutoffs=None):
     runs = {}
     for seed in SEEDS:
-        prob, truth = validate(model, events, seed)
+        prob, truth = validate(model, events, seed, cutoffs)
         runs[seed] = summary(held_out_labels(prob, truth), truth)
         print(f"{name} seed {seed}: score {runs[seed]['score']:.4f}", flush=True)
     return pd.DataFrame(runs)
@@ -75,13 +76,26 @@ def features(events):
                  "last 90 days")
 
 
+def window(events):
+    weeks = weekly_cutoffs(events, VAL_WEEKS[0])
+    summer = [t for t in weeks if t.month in (6, 7, 8)]
+    windows = {
+        "all 30 weeks": weeks,
+        "without Jun to Aug": [t for t in weeks if t not in summer],
+        "first 13 (Mar to May)": weeks[:13],
+        "last 13 (Jul to Sep)": weeks[-13:],
+        "last 4": weeks[-4:],
+    }
+    return table({name: seeds(name, lgbm, events, cutoffs) for name, cutoffs in windows.items()}, "all 30 weeks")
+
+
 def markdown(df):
     lines = ["| | " + " | ".join(df.columns) + " |", "|---" * (len(df.columns) + 1) + "|"]
     lines += ["| " + " | ".join([str(row), *map(str, values)]) + " |" for row, values in df.iterrows()]
     return "\n".join(lines)
 
 
-EXPERIMENTS = {"models": models, "features": features}
+EXPERIMENTS = {"models": models, "features": features, "window": window}
 
 
 def main():
