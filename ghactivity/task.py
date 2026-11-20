@@ -22,6 +22,7 @@ USER_PICK_GAP = TEST_CUTOFF - USER_PICK_TIME
 FIRST_CUTOFF = pd.Timestamp("2026-03-01")
 
 VAL_WEEKS = pd.to_datetime(["2026-10-03 16:00", "2026-10-10 16:00", "2026-10-17 16:00", "2026-10-24 16:00"])
+FINAL_WEEK = pd.Timestamp("2026-10-31 16:00")
 
 
 def activity_events(db):

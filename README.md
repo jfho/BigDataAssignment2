@@ -57,6 +57,7 @@ python compare.py graph
 python compare.py features
 python compare.py window
 python compare.py outage
+python compare.py final
 ```
 
 `predict.py` retrains from scratch with a fixed seed and writes the submission
@@ -150,6 +151,22 @@ still has a few hundred pushes per week, so removing all of them is the harder c
 | LightGBM | 0.428 ± 0.003 | 0.422 ± 0.002 |
 | LightGBM without push inputs | 0.427 ± 0.002 | 0.427 ± 0.002 |
 | GNN on users and repositories | 0.422 ± 0.006 | 0.414 ± 0.005 |
+
+## Final week
+
+The week from cutoff 2026-10-31 was kept aside until the design was fixed. Each model is
+trained on every week before it with 5 seeds, and the inputs already contain the push outage
+(`final.md`).
+
+| | Copy last week | LightGBM without push inputs (submitted) | LightGBM, all 30 | GNN on users and repositories |
+|---|---|---|---|---|
+| Score | 0.345 | 0.410 ± 0.006 | 0.409 ± 0.002 | 0.400 ± 0.025 |
+
+The order is the same as on the validation weeks, with all scores about 0.02 lower. On this
+week the GNN's score moves between 0.358 and 0.422 over the 5 seeds. In the first three
+seeds, the share of users it predicts as 1 changes a lot (open_pr between 3% and 14%, with 7%
+in the labels), so the same thresholds give very different predictions. Removing pushes from
+all its data does not change this, so the push outage is not the main cause.
 
 ## Submitted model
 

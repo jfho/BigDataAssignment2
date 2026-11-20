@@ -7,10 +7,10 @@ from ghactivity import gnn, lgbm
 from ghactivity.data import load_db
 from ghactivity.features import FEATURES, NO_PUSH
 from ghactivity.metrics import WITHOUT_PUSH, score
-from ghactivity.pipeline import held_out_labels, validate, variant
+from ghactivity.pipeline import best_thresholds, held_out_labels, to_labels, validate, variant
 from ghactivity.task import (
-    ACTIVITIES, USER_PICK_GAP, VAL_WEEKS, active_users, activity_events, labels, recent_activity,
-    weekly_cutoffs,
+    ACTIVITIES, FINAL_WEEK, USER_PICK_GAP, VAL_WEEKS, active_users, activity_events, labels,
+    recent_activity, weekly_cutoffs,
 )
 
 SEEDS = range(5)
@@ -123,6 +123,25 @@ def outage(events):
     return table(columns, "LightGBM")
 
 
+MODELS = {"LightGBM, no push inputs (submitted)": variant(lgbm, features=NO_PUSH),
+          "LightGBM, all 30": lgbm, "GNN": gnn}
+
+
+def final(events):
+    users = active_users(events, FINAL_WEEK - USER_PICK_GAP)
+    truth = labels(events, FINAL_WEEK, users)
+    columns = {"Baseline": pd.Series(scores(recent_activity(events, FINAL_WEEK, users), truth)).to_frame()}
+    for name, model in MODELS.items():
+        runs = {}
+        for seed in SEEDS:
+            thresholds = best_thresholds(*validate(model, events, seed))
+            fitted = model.fit(events, weekly_cutoffs(events, FINAL_WEEK), seed)
+            runs[seed] = pd.Series(scores(to_labels(model.predict(fitted, events, FINAL_WEEK, users), thresholds), truth))
+            print(f"{name} seed {seed}: score {runs[seed]['score']:.4f}", flush=True)
+        columns[name] = pd.DataFrame(runs)
+    return pd.DataFrame({name: mean_sd(runs.loc[ROWS]) for name, runs in columns.items()})
+
+
 def markdown(df):
     lines = ["| | " + " | ".join(df.columns) + " |", "|---" * (len(df.columns) + 1) + "|"]
     lines += ["| " + " | ".join([str(row), *map(str, values)]) + " |" for row, values in df.iterrows()]
@@ -130,7 +149,7 @@ def markdown(df):
 
 
 EXPERIMENTS = {"models": models, "graph": graph, "features": features, "window": window,
-               "outage": outage}
+               "outage": outage, "final": final}
 
 
 def main():
