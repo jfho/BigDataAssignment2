@@ -53,6 +53,7 @@ The code runs on Python 3.14 with the versions in `requirements.txt`.
 ```bash
 python predict.py
 python compare.py models
+python compare.py graph
 python compare.py features
 python compare.py window
 ```
@@ -88,8 +89,9 @@ nodes carry the same 30 numbers and repository nodes their activity counts over 
 90 days. A user and a repository they worked in are linked by one edge per activity, in both
 directions. In each of the two message-passing layers, a node's new vector is a linear map of
 its own vector plus the mean of its neighbours' messages. A last layer gives one output per
-activity. A second version has edges that also carry how often and how recently the user
-worked there.
+activity. To test the edges I also run it with no edges and with every edge moved to a
+random repository, where each node keeps its number of edges. A last variant has edges that
+also carry how often and how recently the user worked there.
 
 To validate, I train on the weeks before 2026-10-03 and score the four weeks from cutoffs
 2026-10-03, 10-10, 10-17 and 10-24. Each activity gets its own decision threshold, picked
@@ -114,6 +116,10 @@ group.
 | Models (`models.md`) | copy last week | 0.368 | |
 | | LightGBM | 0.428 ± 0.003 | 4 of 4 |
 | | GNN on users and repositories | 0.422 ± 0.006 | 4 of 4 |
+| Edges (`graph.md`) | GNN, no edges | 0.418 ± 0.005 | |
+| | random edges | 0.420 ± 0.004 | 2 of 4 |
+| | real edges | 0.422 ± 0.006 | 3 of 4 |
+| | real edges with counts and recency | 0.422 ± 0.002 | 4 of 4 |
 | Feature windows (`features.md`, LightGBM) | last 90 days only | 0.385 ± 0.003 | |
 | | last 7 days only | 0.380 ± 0.001 | 1 of 4 |
 | | 1, 7, 28 and 90 days | 0.425 ± 0.002 | 4 of 4 |
@@ -125,7 +131,9 @@ group.
 | | last 13 weeks (July to September) | 0.397 ± 0.000 | 0 of 4 |
 | | last 4 weeks | 0.387 ± 0.000 | 0 of 4 |
 
-Counting each activity over several windows adds about 0.04 over a single window.
+Counting each activity over several windows adds about 0.04 over a single window. The real
+edges add about 0.004 over no edges, which is within the seed sd, and random edges score
+about the same.
 
 The two 13-week windows have the same length, but March to May has 50,400 positive labels
 over the five activities and July to September only 18,406, from more rows (81,200 vs

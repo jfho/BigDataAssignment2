@@ -46,8 +46,13 @@ def build_graph(events, t, users, edges="real"):
         [count_activity(past, t - pd.Timedelta(days=d), t, repo_ids, by="repo_id") for d in REPO_WINDOWS],
         axis=1,
     ))
+    rng = np.random.default_rng(int(t.timestamp()))
     for a in ACTIVITIES:
         pairs = edge_table(past, t, a)
+        if edges == "none":
+            pairs = pairs.iloc[:0]
+        if edges == "shuffled":
+            pairs["repo_id"] = rng.permutation(pairs["repo_id"].to_numpy())
         index = torch.tensor(np.stack([
             user_ids.get_indexer(pairs["github_user_id"]),
             repo_ids.get_indexer(pairs["repo_id"]),

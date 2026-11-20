@@ -62,6 +62,11 @@ def models(events):
     return table(columns, "Baseline")
 
 
+def graph(events):
+    edges = {"no edges": "none", "shuffled edges": "shuffled", "real edges": "real", "temporal edges": "temporal"}
+    return table({name: seeds(name, variant(gnn, edges=e), events) for name, e in edges.items()}, "no edges")
+
+
 FEATURE_SETS = {
     "last 7 days": [c for c in FEATURES if c.endswith("_7d")],
     "last 90 days": [c for c in FEATURES if c.endswith("_90d")],
@@ -95,7 +100,7 @@ def markdown(df):
     return "\n".join(lines)
 
 
-EXPERIMENTS = {"models": models, "features": features, "window": window}
+EXPERIMENTS = {"models": models, "graph": graph, "features": features, "window": window}
 
 
 def main():
