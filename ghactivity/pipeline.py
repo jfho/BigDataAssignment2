@@ -1,3 +1,6 @@
+from functools import partial
+from types import SimpleNamespace
+
 import numpy as np
 import pandas as pd
 
@@ -5,6 +8,10 @@ from ghactivity.metrics import label_f1
 from ghactivity.task import ACTIVITIES, USER_PICK_GAP, VAL_WEEKS, active_users, labels, weekly_cutoffs
 
 THRESHOLDS = np.arange(0.1, 0.65, 0.05).round(2)
+
+
+def variant(model, **options):
+    return SimpleNamespace(fit=partial(model.fit, **options), predict=model.predict)
 
 
 def validate(model, events, seed=0):

@@ -51,12 +51,13 @@ The code runs on Python 3.14 with the versions in `requirements.txt`.
 ```bash
 python predict.py
 python compare.py models
+python compare.py features
 ```
 
 `predict.py` retrains from scratch with a fixed seed and writes the submission
 `output_315552801.csv` for the users in `test_input.csv`. It then checks the file with the
-course's `evaluate.py`. `compare.py models` scores the baseline and LightGBM on the
-validation weeks and saves the table in `results/`.
+course's `evaluate.py`. `compare.py <experiment>` runs one of the experiments below and saves
+its table in `results/`. Without an argument it lists them.
 
 ## Method
 
@@ -88,6 +89,25 @@ for example, contains no PushEvent at all. An activity that GH Archive is missin
 test week is not scored, and the push labels of the latest weeks are broken anyway. So I
 compare designs on the score of the other five activities, the same as `evaluate.py --skip
 push`, and report the score over all six as well.
+
+## Results
+
+The scores are for the five activities without push, with the four validation weeks pooled,
+as mean ± sd over the seeds (full tables with F1 per activity and each week in `results/`).
+"Weeks better" counts the validation weeks in which a variant beats the first row of its
+group.
+
+| Experiment | Variant | Score | Weeks better |
+|---|---|---|---|
+| Models (`models.md`) | copy last week | 0.368 | |
+| | LightGBM | 0.428 ± 0.003 | 4 of 4 |
+| Feature windows (`features.md`, LightGBM) | last 90 days only | 0.385 ± 0.003 | |
+| | last 7 days only | 0.380 ± 0.001 | 1 of 4 |
+| | 1, 7, 28 and 90 days | 0.425 ± 0.002 | 4 of 4 |
+| | and days since last (all 30) | 0.428 ± 0.003 | 4 of 4 |
+| | all 30 except the 6 push features | 0.427 ± 0.002 | 4 of 4 |
+
+Counting each activity over several windows adds about 0.04 over a single window.
 
 ## Submitted model
 

@@ -5,8 +5,10 @@ from ghactivity.features import training_table, user_features
 from ghactivity.task import ACTIVITIES
 
 
-def fit(events, cutoffs, seed=0):
+def fit(events, cutoffs, seed=0, features=None):
     X, y = training_table(events, cutoffs)
+    if features is not None:
+        X = X[features]
     params = {"objective": "binary", "verbose": -1, "seed": seed}
     return {a: lgb.train(params, lgb.Dataset(X, y[a])) for a in ACTIVITIES}
 

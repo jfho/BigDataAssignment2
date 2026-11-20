@@ -6,6 +6,7 @@ MAX_DAYS = 90
 WINDOWS = [1, 7, 28, 90]
 
 FEATURES = [f"{a}_{d}d" for d in WINDOWS for a in ACTIVITIES] + [f"{a}_days_since" for a in ACTIVITIES]
+NO_PUSH = [c for c in FEATURES if not c.startswith("push")]
 
 
 def days_since_last(past, t, users):

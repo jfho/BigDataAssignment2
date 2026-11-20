@@ -5,8 +5,9 @@ import pandas as pd
 
 from ghactivity import lgbm
 from ghactivity.data import load_db
+from ghactivity.features import FEATURES, NO_PUSH
 from ghactivity.metrics import WITHOUT_PUSH, score
-from ghactivity.pipeline import held_out_labels, validate
+from ghactivity.pipeline import held_out_labels, validate, variant
 from ghactivity.task import (
     ACTIVITIES, USER_PICK_GAP, VAL_WEEKS, active_users, activity_events, labels, recent_activity,
 )
@@ -60,13 +61,27 @@ def models(events):
     return table(columns, "Baseline")
 
 
+FEATURE_SETS = {
+    "last 7 days": [c for c in FEATURES if c.endswith("_7d")],
+    "last 90 days": [c for c in FEATURES if c.endswith("_90d")],
+    "1, 7, 28, 90 days": [c for c in FEATURES if not c.endswith("_days_since")],
+    "+ days since last": FEATURES,
+    "all but push": NO_PUSH,
+}
+
+
+def features(events):
+    return table({name: seeds(name, variant(lgbm, features=cols), events) for name, cols in FEATURE_SETS.items()},
+                 "last 90 days")
+
+
 def markdown(df):
     lines = ["| | " + " | ".join(df.columns) + " |", "|---" * (len(df.columns) + 1) + "|"]
     lines += ["| " + " | ".join([str(row), *map(str, values)]) + " |" for row, values in df.iterrows()]
     return "\n".join(lines)
 
 
-EXPERIMENTS = {"models": models}
+EXPERIMENTS = {"models": models, "features": features}
 
 
 def main():
