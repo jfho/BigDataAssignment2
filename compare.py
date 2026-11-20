@@ -20,6 +20,9 @@ RESULTS = Path(__file__).parent / "results"
 # GH Archive has almost no pushes from 2026-10-26 on, 26 days before the test cutoff
 OUTAGE = pd.Timedelta(days=26)
 
+# the week of the reference scores in the course README
+REFERENCE_WEEK = pd.Timestamp("2026-09-26 16:00")
+
 
 def scores(pred, truth):
     return {**score(pred, truth, WITHOUT_PUSH), "score, all six": score(pred, truth)["score"]}
@@ -127,19 +130,33 @@ MODELS = {"LightGBM, no push inputs (submitted)": variant(lgbm, features=NO_PUSH
           "LightGBM, all 30": lgbm, "GNN": gnn}
 
 
-def final(events):
-    users = active_users(events, FINAL_WEEK - USER_PICK_GAP)
-    truth = labels(events, FINAL_WEEK, users)
-    columns = {"Baseline": pd.Series(scores(recent_activity(events, FINAL_WEEK, users), truth)).to_frame()}
-    for name, model in MODELS.items():
+def one_week(events, t, val_weeks, models=MODELS, seed_range=SEEDS):
+    users = active_users(events, t - USER_PICK_GAP)
+    truth = labels(events, t, users)
+    columns = {"Baseline": pd.Series(scores(recent_activity(events, t, users), truth)).to_frame()}
+    for name, model in models.items():
         runs = {}
-        for seed in SEEDS:
-            thresholds = best_thresholds(*validate(model, events, seed))
-            fitted = model.fit(events, weekly_cutoffs(events, FINAL_WEEK), seed)
-            runs[seed] = pd.Series(scores(to_labels(model.predict(fitted, events, FINAL_WEEK, users), thresholds), truth))
+        for seed in seed_range:
+            thresholds = best_thresholds(*validate(model, events, seed, weeks=val_weeks))
+            fitted = model.fit(events, weekly_cutoffs(events, t), seed)
+            runs[seed] = pd.Series(scores(to_labels(model.predict(fitted, events, t, users), thresholds), truth))
             print(f"{name} seed {seed}: score {runs[seed]['score']:.4f}", flush=True)
         columns[name] = pd.DataFrame(runs)
     return pd.DataFrame({name: mean_sd(runs.loc[ROWS]) for name, runs in columns.items()})
+
+
+def final(events):
+    return one_week(events, FINAL_WEEK, VAL_WEEKS)
+
+
+def reference(events, models=MODELS, seed_range=SEEDS):
+    week = pd.Timedelta(days=7)
+    return one_week(events, REFERENCE_WEEK, [REFERENCE_WEEK - k * week for k in (4, 3, 2, 1)], models, seed_range)
+
+
+def recency(events):
+    names = ["last 90 days", "1, 7, 28, 90 days", "+ days since last"]
+    return reference(events, {f"LightGBM, {n}": variant(lgbm, features=FEATURE_SETS[n]) for n in names})
 
 
 def markdown(df):
@@ -149,7 +166,7 @@ def markdown(df):
 
 
 EXPERIMENTS = {"models": models, "graph": graph, "features": features, "window": window,
-               "outage": outage, "final": final}
+               "outage": outage, "final": final, "reference": reference, "recency": recency}
 
 
 def main():

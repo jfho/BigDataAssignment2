@@ -58,6 +58,8 @@ python compare.py features
 python compare.py window
 python compare.py outage
 python compare.py final
+python compare.py reference
+python compare.py recency
 ```
 
 `predict.py` retrains from scratch with a fixed seed and writes the submission
@@ -167,6 +169,40 @@ week the GNN's score moves between 0.358 and 0.422 over the 5 seeds. In the firs
 seeds, the share of users it predicts as 1 changes a lot (open_pr between 3% and 14%, with 7%
 in the labels), so the same thresholds give very different predictions. Removing pushes from
 all its data does not change this, so the push outage is not the main cause.
+
+## Reference week
+
+The course README gives reference scores for the week 2026/09/27 to 10/04 Taiwan time, which
+starts at the cutoff 2026-09-26 16:00 UTC. To compare, I trained each model on the weeks
+before that cutoff, with thresholds picked on the four weeks before it. Then I scored all six
+activities like the course does (`reference.md`).
+
+| Model | Course | Mine, all six | Mine, without push |
+|---|---|---|---|
+| Copy last week | 0.496 | 0.499 | 0.382 |
+| GNN without time encoding | 0.357 | | |
+| GNN with time encoding | 0.548 | | |
+| GNN on users and repositories | | 0.504 ± 0.022 | 0.428 ± 0.009 |
+| LightGBM, all 30 | | 0.524 ± 0.001 | 0.438 ± 0.001 |
+| LightGBM without push inputs (submitted) | | 0.502 ± 0.001 | 0.450 ± 0.002 |
+
+Copying last week gives 0.499 here and 0.496 in the course README, which suggests my data and
+user rule are close to what the course used for that week. The best score is the course's
+GNN with time encoding. The course README does not say how that GNN was trained or how its
+thresholds were picked.
+
+Without push, LightGBM with only the 90-day counts beats the full 30 features on this week
+(0.462 vs 0.438, `recency.md`).
+
+I looked into the LightGBM case with a separate script, one seed. The full features still
+rank users better, with a higher average precision in every activity. With thresholds picked
+on the reference week itself they win again, so I think the loss comes mostly from the
+thresholds. The thresholds for this week are picked with a model trained on the weeks up to
+2026-08-22, when activity was very low, and for every activity except push they land at
+0.10, the lowest value of the grid. The final model is trained up to 2026-09-19 and has seen
+the jump in activity in early September. With the old thresholds it predicts open_pr for 24%
+of users, while 9% do it. The full features follow the jump more closely than the 90-day
+counts (mean predicted open_pr 0.092 vs 0.073), so they lose more.
 
 ## Submitted model
 
