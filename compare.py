@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ghactivity import gnn, lgbm
+from ghactivity import gnn, lgbm, rdl
 from ghactivity.data import load_db
 from ghactivity.features import FEATURES, NO_PUSH
 from ghactivity.metrics import WITHOUT_PUSH, score
@@ -14,6 +14,7 @@ from ghactivity.task import (
 )
 
 SEEDS = range(5)
+RDL_SEEDS = range(3)
 ROWS = ACTIVITIES + ["score, all six", "macro", "micro", "score"]
 RESULTS = Path(__file__).parent / "results"
 
@@ -35,9 +36,9 @@ def summary(pred, truth):
     return pd.Series({**{row: pooled[row] for row in ROWS}, **weekly})
 
 
-def seeds(name, model, events, cutoffs=None):
+def seeds(name, model, events, cutoffs=None, seed_range=SEEDS):
     runs = {}
-    for seed in SEEDS:
+    for seed in seed_range:
         prob, truth = validate(model, events, seed, cutoffs)
         runs[seed] = summary(held_out_labels(prob, truth), truth)
         print(f"{name} seed {seed}: score {runs[seed]['score']:.4f}", flush=True)
@@ -159,6 +160,19 @@ def recency(events):
     return reference(events, {f"LightGBM, {n}": variant(lgbm, features=FEATURE_SETS[n]) for n in names})
 
 
+RDL = {"RDL, no time": variant(rdl, time=False), "RDL, time": rdl}
+
+
+def relational(events):
+    columns = {"LightGBM": seeds("LightGBM", lgbm, events),
+               **{name: seeds(name, model, events, seed_range=RDL_SEEDS) for name, model in RDL.items()}}
+    return table(columns, "LightGBM")
+
+
+def relational_reference(events):
+    return reference(events, RDL, RDL_SEEDS)
+
+
 def markdown(df):
     lines = ["| | " + " | ".join(df.columns) + " |", "|---" * (len(df.columns) + 1) + "|"]
     lines += ["| " + " | ".join([str(row), *map(str, values)]) + " |" for row, values in df.iterrows()]
@@ -166,7 +180,8 @@ def markdown(df):
 
 
 EXPERIMENTS = {"models": models, "graph": graph, "features": features, "window": window,
-               "outage": outage, "final": final, "reference": reference, "recency": recency}
+               "outage": outage, "final": final, "reference": reference, "recency": recency,
+               "rdl": relational, "rdl_reference": relational_reference}
 
 
 def main():

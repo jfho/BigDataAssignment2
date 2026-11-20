@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 import torch
 
+from ghactivity import rdl
 from ghactivity.data import SCRIPTS_DIR, SUBMISSION_DIR, load_db
 from ghactivity.features import FEATURES, user_features
 from ghactivity.gnn import build_graph
@@ -39,6 +40,15 @@ def test_nothing_after_t_is_used(events, edges):
     assert user_features(past, t, users).equals(user_features(events, t, users))
     assert list(user_features(events, t, users).columns) == FEATURES
     assert_same_graph(build_graph(events, t, users, edges), build_graph(past, t, users, edges))
+
+
+def test_rdl_uses_nothing_after_t(events, monkeypatch):
+    t = VAL_WEEKS[0]
+    users = active_users(events, t)
+    graph = rdl.build_graph(t, users)
+    past = {kind: rows[rows[rdl.ROWS[kind][2]] < t] for kind, rows in rdl.tables().items()}
+    monkeypatch.setattr(rdl, "tables", lambda: past)
+    assert_same_graph(graph, rdl.build_graph(t, users))
 
 
 def test_same_score_as_evaluate_py(events):

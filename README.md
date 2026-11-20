@@ -3,8 +3,8 @@
 For each test user, the code predicts which of six activities (`open_pr`, `open_issue`,
 `issue_comment`, `pr_review`, `pr_review_comment`, `push`) they do in the test week, 2026-11-22
 00:00 to 11-29 00:00 Taiwan time (2026-11-21 16:00 to 11-28 16:00 UTC). I compare LightGBM on
-per-user features and a graph neural network on users and repositories against copying
-last week.
+per-user features and two graph neural networks against copying last week, and submit
+LightGBM.
 
 ## Data Source
 
@@ -53,20 +53,13 @@ The code runs on Python 3.14 with the versions in `requirements.txt`.
 ```bash
 python predict.py
 python compare.py models
-python compare.py graph
-python compare.py features
-python compare.py window
-python compare.py outage
-python compare.py final
-python compare.py reference
-python compare.py recency
 ```
 
 `predict.py` retrains from scratch with a fixed seed and writes the submission
 `output_315552801.csv` for the users in `test_input.csv`. It then checks the file with the
 course's `evaluate.py`. With `--model gnn` it uses the GNN on users and repositories instead.
-`compare.py <experiment>` runs one of the experiments below and saves
-its table in `results/`. Without an argument it lists them.
+`compare.py <experiment>` runs one of the experiments below and saves its table in
+`results/`. Without an argument it lists them.
 
 ## Method
 
@@ -97,10 +90,19 @@ activity. To test the edges I also run it with no edges and with every edge move
 random repository, where each node keeps its number of edges. A last variant has edges that
 also carry how often and how recently the user worked there.
 
+Since the course's reference GNN follows the RelBench examples, I also built a GNN directly
+on the 8 tables (`rdl.py`) to compare with. Every row visible before t is a node, with activity
+rows only from the last 90 days. Each foreign key is an edge in both directions, except the
+late-known `merged_by_id`. The node inputs are the few columns that survive the masking.
+Its time encoding adds to each row's vector how many days before t the row happened,
+written as sine and cosine waves like in RelBench. It has two layers with sum aggregation
+and the same training settings as the GNN on users and repositories, without any tuning.
+
 To validate, I train on the weeks before 2026-10-03 and score the four weeks from cutoffs
 2026-10-03, 10-10, 10-17 and 10-24. Each activity gets its own decision threshold, picked
 from 0.10 to 0.60 in steps of 0.05, and each week is scored with thresholds picked on the
-other three. Every model runs with 5 seeds.
+other three. Every model runs with 5 seeds, except the GNN on the 8 tables with 3, because
+one fit takes about 25 minutes.
 
 GH Archive has recorded almost no push events since 2026-10-26. The hour 2026-10-28 12:00,
 for example, contains no PushEvent at all. An activity that GH Archive is missing in the
@@ -124,6 +126,8 @@ group.
 | | random edges | 0.420 ± 0.004 | 2 of 4 |
 | | real edges | 0.422 ± 0.006 | 3 of 4 |
 | | real edges with counts and recency | 0.422 ± 0.002 | 4 of 4 |
+| GNN on the 8 tables (`rdl.md`, 3 seeds) | no time encoding | 0.384 ± 0.002 | |
+| | with time encoding | 0.413 ± 0.006 | 4 of 4 |
 | Feature windows (`features.md`, LightGBM) | last 90 days only | 0.385 ± 0.003 | |
 | | last 7 days only | 0.380 ± 0.001 | 1 of 4 |
 | | 1, 7, 28 and 90 days | 0.425 ± 0.002 | 4 of 4 |
@@ -138,6 +142,12 @@ group.
 Counting each activity over several windows adds about 0.04 over a single window. The real
 edges add about 0.004 over no edges, which is within the seed sd, and random edges score
 about the same.
+
+The time encoding helps the GNN on the 8 tables in every validation week, and by 0.029 with
+the four weeks pooled. Even with it, that GNN stays below LightGBM in all four weeks and below the GNN on
+users and repositories. I think the reason is that LightGBM gets the time information
+already counted per user, while the GNN on the 8 tables has to learn the counting from
+single rows.
 
 The two 13-week windows have the same length, but March to May has 50,400 positive labels
 over the five activities and July to September only 18,406, from more rows (81,200 vs
@@ -175,13 +185,15 @@ all its data does not change this, so the push outage is not the main cause.
 The course README gives reference scores for the week 2026/09/27 to 10/04 Taiwan time, which
 starts at the cutoff 2026-09-26 16:00 UTC. To compare, I trained each model on the weeks
 before that cutoff, with thresholds picked on the four weeks before it. Then I scored all six
-activities like the course does (`reference.md`).
+activities like the course does (`reference.md`, `rdl_reference.md`).
 
 | Model | Course | Mine, all six | Mine, without push |
 |---|---|---|---|
 | Copy last week | 0.496 | 0.499 | 0.382 |
 | GNN without time encoding | 0.357 | | |
 | GNN with time encoding | 0.548 | | |
+| GNN on the 8 tables, no time encoding (3 seeds) | | 0.506 ± 0.001 | 0.454 ± 0.001 |
+| GNN on the 8 tables, with time encoding (3 seeds) | | 0.514 ± 0.012 | 0.423 ± 0.010 |
 | GNN on users and repositories | | 0.504 ± 0.022 | 0.428 ± 0.009 |
 | LightGBM, all 30 (submitted) | | 0.524 ± 0.001 | 0.438 ± 0.001 |
 | LightGBM without push inputs | | 0.502 ± 0.001 | 0.450 ± 0.002 |
@@ -189,10 +201,12 @@ activities like the course does (`reference.md`).
 Copying last week gives 0.499 here and 0.496 in the course README, which suggests my data and
 user rule are close to what the course used for that week. The best score is the course's
 GNN with time encoding. The course README does not say how that GNN was trained or how its
-thresholds were picked.
+thresholds were picked. Without time encoding my GNN on the 8 tables scores just above
+copying last week, while the course's scores far below it.
 
-Without push, LightGBM with only the 90-day counts beats the full 30 features on this week
-(0.462 vs 0.438, `recency.md`).
+Without push, the versions with less time information come out ahead on this week. LightGBM
+with only the 90-day counts beats the full 30 features (0.462 vs 0.438, `recency.md`), and the
+GNN on the 8 tables scores higher without its time encoding.
 
 I looked into the LightGBM case with a separate script, one seed. The full features still
 rank users better, with a higher average precision in every activity. With thresholds picked
@@ -217,8 +231,8 @@ inputs cost LightGBM only 0.006 on the other five activities (`outage.md`). Runn
 ## Tests
 
 `pytest` checks that the user rule gives exactly the users of `test_input.csv`, that the
-baseline, the user features and the graphs use nothing after the cutoff, and that my score matches
-`evaluate.py`.
+baseline, the user features and the graphs of both GNNs use nothing after the cutoff, and
+that my score matches `evaluate.py`.
 
 ## Code
 
@@ -230,6 +244,7 @@ baseline, the user features and the graphs use nothing after the cutoff, and tha
 | `ghactivity/metrics.py` | F1 and the official score |
 | `ghactivity/lgbm.py` | the LightGBM models |
 | `ghactivity/gnn.py` | the GNN on users and repositories |
-| `ghactivity/pipeline.py` | validation, thresholds and retraining |
+| `ghactivity/rdl.py` | the GNN on the 8 tables, with every row a node |
+| `ghactivity/pipeline.py` | validation, thresholds and retraining, shared by all models |
 | `predict.py` | writes and checks the submission file |
 | `compare.py` | the experiments in the results |
