@@ -6,10 +6,11 @@ import pandas as pd
 
 from ghactivity import gnn, lgbm
 from ghactivity.data import SCRIPTS_DIR, SUBMISSION_DIR, load_db
-from ghactivity.pipeline import to_labels, train_for_week
+from ghactivity.features import NO_PUSH
+from ghactivity.pipeline import to_labels, train_for_week, variant
 from ghactivity.task import ACTIVITIES, TEST_CUTOFF, activity_events
 
-MODELS = {"lightgbm": lgbm, "gnn": gnn}
+MODELS = {"lightgbm": variant(lgbm, features=NO_PUSH), "gnn": gnn}
 
 
 def main():

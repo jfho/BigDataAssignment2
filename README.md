@@ -56,6 +56,7 @@ python compare.py models
 python compare.py graph
 python compare.py features
 python compare.py window
+python compare.py outage
 ```
 
 `predict.py` retrains from scratch with a fixed seed and writes the submission
@@ -140,10 +141,23 @@ over the five activities and July to September only 18,406, from more rows (81,2
 107,695). I think the number of positive examples matters more here than how recent the
 weeks are.
 
+For the missing pushes I predict each validation week twice, once as usual and once with the
+pushes of the 26 days before the cutoff removed (`outage.md`). Before the test week GH Archive
+still has a few hundred pushes per week, so removing all of them is the harder case.
+
+| Model | Pushes complete | Last 26 days of pushes removed |
+|---|---|---|
+| LightGBM | 0.428 ± 0.003 | 0.422 ± 0.002 |
+| LightGBM without push inputs | 0.427 ± 0.002 | 0.427 ± 0.002 |
+| GNN on users and repositories | 0.422 ± 0.006 | 0.414 ± 0.005 |
+
 ## Submitted model
 
-I submit LightGBM retrained on every complete week from March, with thresholds picked on the
-four validation weeks. Running `predict.py` twice gives the same file.
+I submit LightGBM without the six push features, retrained on every complete week from March
+with thresholds picked on the four validation weeks. On the validation weeks it scores the
+same as LightGBM with all 30 features on the five activities without push. It never reads
+push data, so the missing pushes before the test week cannot hurt it. Running `predict.py`
+twice gives the same file.
 
 ## Tests
 

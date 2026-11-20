@@ -38,13 +38,14 @@ def to_labels(prob, thresholds):
     return pd.DataFrame({a: (prob[a] >= thresholds[a]).astype(int) for a in ACTIVITIES})
 
 
-def held_out_labels(prob, truth):
+def held_out_labels(prob, truth, apply_to=None):
     # each week gets the thresholds picked on the other weeks
+    apply_to = prob if apply_to is None else apply_to
     weeks = prob.index.get_level_values("cutoff")
     parts = []
     for t in weeks.unique():
         others = weeks != t
-        parts.append(to_labels(prob[~others], best_thresholds(prob[others], truth[others])))
+        parts.append(to_labels(apply_to[~others], best_thresholds(prob[others], truth[others])))
     return pd.concat(parts)
 
 

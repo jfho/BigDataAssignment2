@@ -17,6 +17,9 @@ SEEDS = range(5)
 ROWS = ACTIVITIES + ["score, all six", "macro", "micro", "score"]
 RESULTS = Path(__file__).parent / "results"
 
+# GH Archive has almost no pushes from 2026-10-26 on, 26 days before the test cutoff
+OUTAGE = pd.Timedelta(days=26)
+
 
 def scores(pred, truth):
     return {**score(pred, truth, WITHOUT_PUSH), "score, all six": score(pred, truth)["score"]}
@@ -94,13 +97,40 @@ def window(events):
     return table({name: seeds(name, lgbm, events, cutoffs) for name, cutoffs in windows.items()}, "all 30 weeks")
 
 
+def with_outage(name, model, events):
+    normal, blind = {}, {}
+    for seed in SEEDS:
+        fitted = model.fit(events, weekly_cutoffs(events, VAL_WEEKS[0]), seed)
+        prob, prob_blind, truth = {}, {}, {}
+        for t in VAL_WEEKS:
+            users = active_users(events, t - USER_PICK_GAP)
+            missing = (events["activity"] == "push") & (events["time"] >= t - OUTAGE)
+            prob[t] = model.predict(fitted, events, t, users)
+            prob_blind[t] = model.predict(fitted, events[~missing], t, users)
+            truth[t] = labels(events, t, users)
+        prob, prob_blind, truth = (pd.concat(d, names=["cutoff"]) for d in (prob, prob_blind, truth))
+        normal[seed] = summary(held_out_labels(prob, truth), truth)
+        blind[seed] = summary(held_out_labels(prob, truth, prob_blind), truth)
+        print(f"{name} seed {seed}: {normal[seed]['score']:.4f} -> {blind[seed]['score']:.4f}", flush=True)
+    return pd.DataFrame(normal), pd.DataFrame(blind)
+
+
+def outage(events):
+    columns = {}
+    for name, model in [("LightGBM", lgbm), ("LightGBM, no push inputs", variant(lgbm, features=NO_PUSH)),
+                        ("GNN", gnn)]:
+        columns[name], columns[f"{name}, pushes missing"] = with_outage(name, model, events)
+    return table(columns, "LightGBM")
+
+
 def markdown(df):
     lines = ["| | " + " | ".join(df.columns) + " |", "|---" * (len(df.columns) + 1) + "|"]
     lines += ["| " + " | ".join([str(row), *map(str, values)]) + " |" for row, values in df.iterrows()]
     return "\n".join(lines)
 
 
-EXPERIMENTS = {"models": models, "graph": graph, "features": features, "window": window}
+EXPERIMENTS = {"models": models, "graph": graph, "features": features, "window": window,
+               "outage": outage}
 
 
 def main():
