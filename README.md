@@ -107,43 +107,44 @@ one fit takes about 25 minutes.
 GH Archive itself records less over the year. Its plain hour files shrink from about 38 MB in
 spring to 11 MB in October (file sizes of 8 sample hours per month). It has recorded almost
 no push events since 2026-10-26. The hour 2026-10-28 12:00, for example, contains no
-PushEvent at all. An activity that GH Archive is missing in the
-test week is not scored, and the push labels of the latest weeks are broken anyway. So I
-compare designs on the score of the other five activities, the same as `evaluate.py --skip
-push`, and report the score over all six as well.
+PushEvent at all. An activity that GH Archive is missing in the test week is not scored,
+and the push labels of the latest weeks are broken anyway. So I compare designs on the score
+of the other five activities, the same as `evaluate.py --skip push`, and report the score
+over all six as well. My slides use the score over all six. Every conclusion below is the
+same with either score.
 
 ## Results
 
-The scores are for the five activities without push, with the four validation weeks pooled,
-as mean ± sd over the seeds (full tables with F1 per activity and each week in `results/`).
-"Weeks better" counts the validation weeks in which a variant beats the first row of its
-group.
+The scores are for the five activities without push and for all six, with the four
+validation weeks pooled, as mean ± sd over the seeds (full tables with F1 per activity and
+each week in `results/`). "Weeks better" counts the validation weeks in which a variant beats
+the first row of its group, on the score without push.
 
-| Experiment | Variant | Score | Weeks better |
-|---|---|---|---|
-| Models (`models.md`) | copy last week | 0.368 | |
-| | LightGBM | 0.428 ± 0.003 | 4 of 4 |
-| | GNN on users and repositories | 0.422 ± 0.006 | 4 of 4 |
-| Edges (`graph.md`) | GNN, no edges | 0.418 ± 0.005 | |
-| | random edges | 0.420 ± 0.004 | 2 of 4 |
-| | real edges | 0.422 ± 0.006 | 3 of 4 |
-| | real edges with counts and recency | 0.422 ± 0.002 | 4 of 4 |
-| GNN on the 8 tables (`rdl.md`, 3 seeds) | no time encoding | 0.384 ± 0.002 | |
-| | with time encoding | 0.413 ± 0.006 | 4 of 4 |
-| Feature windows (`features.md`, LightGBM) | last 90 days only | 0.385 ± 0.003 | |
-| | last 7 days only | 0.380 ± 0.001 | 1 of 4 |
-| | 1, 7, 28 and 90 days | 0.425 ± 0.002 | 4 of 4 |
-| | and days since last (all 30) | 0.428 ± 0.003 | 4 of 4 |
-| | all 30 except the 6 push features | 0.427 ± 0.002 | 4 of 4 |
-| Training weeks (`window.md`, LightGBM) | all 30 weeks from March | 0.428 ± 0.003 | |
-| | without June to August | 0.429 ± 0.000 | 2 of 4 |
-| | first 13 weeks (March to May) | 0.423 ± 0.000 | 0 of 4 |
-| | last 13 weeks (July to September) | 0.397 ± 0.000 | 0 of 4 |
-| | last 4 weeks | 0.387 ± 0.000 | 0 of 4 |
+| Experiment | Variant | Without push | All six | Weeks better |
+|---|---|---|---|---|
+| Models (`models.md`) | copy last week | 0.368 | 0.462 | |
+| | LightGBM | 0.428 ± 0.003 | 0.509 ± 0.002 | 4 of 4 |
+| | GNN on users and repositories | 0.422 ± 0.006 | 0.504 ± 0.004 | 4 of 4 |
+| Edges (`graph.md`) | GNN, no edges | 0.418 ± 0.005 | 0.502 ± 0.002 | |
+| | random edges | 0.420 ± 0.004 | 0.501 ± 0.003 | 2 of 4 |
+| | real edges | 0.422 ± 0.006 | 0.504 ± 0.004 | 3 of 4 |
+| | real edges with counts and recency | 0.422 ± 0.002 | 0.504 ± 0.001 | 4 of 4 |
+| GNN on the 8 tables (`rdl.md`, 3 seeds) | no time encoding | 0.384 ± 0.002 | 0.468 ± 0.000 | |
+| | with time encoding | 0.413 ± 0.006 | 0.495 ± 0.004 | 4 of 4 |
+| Feature windows (`features.md`, LightGBM) | last 90 days only | 0.385 ± 0.003 | 0.468 ± 0.003 | |
+| | last 7 days only | 0.380 ± 0.001 | 0.473 ± 0.001 | 1 of 4 |
+| | 1, 7, 28 and 90 days | 0.425 ± 0.002 | 0.504 ± 0.001 | 4 of 4 |
+| | and days since last (all 30) | 0.428 ± 0.003 | 0.509 ± 0.002 | 4 of 4 |
+| | all 30 except the 6 push features | 0.427 ± 0.002 | 0.477 ± 0.002 | 4 of 4 |
+| Training weeks (`window.md`, LightGBM) | all 30 weeks from March | 0.428 ± 0.003 | 0.509 ± 0.002 | |
+| | without June to August | 0.429 ± 0.000 | 0.511 ± 0.000 | 2 of 4 |
+| | first 13 weeks (March to May) | 0.423 ± 0.000 | 0.504 ± 0.000 | 0 of 4 |
+| | last 13 weeks (July to September) | 0.397 ± 0.000 | 0.489 ± 0.000 | 0 of 4 |
+| | last 4 weeks | 0.387 ± 0.000 | 0.483 ± 0.000 | 0 of 4 |
 
 Counting each activity over several windows adds about 0.04 over a single window. The real
-edges add about 0.004 over no edges, which is within the seed sd, and random edges score
-about the same.
+edges add about 0.004 over no edges (0.002 over all six), which is within the seed sd, and
+random edges score about the same.
 
 The time encoding helps the GNN on the 8 tables in every validation week, and by 0.029 with
 the four weeks pooled. Even with it, that GNN stays below LightGBM in all four weeks and below the GNN on
@@ -160,7 +161,7 @@ For the missing pushes I predict each validation week twice, once as usual and o
 pushes of the 26 days before the cutoff removed (`outage.md`). Before the test week GH Archive
 still has a few hundred pushes per week, so removing all of them is the harder case.
 
-| Model | Pushes complete | Last 26 days of pushes removed |
+| Model, score without push | Pushes complete | Last 26 days of pushes removed |
 |---|---|---|
 | LightGBM | 0.428 ± 0.003 | 0.422 ± 0.002 |
 | LightGBM without push inputs | 0.427 ± 0.002 | 0.427 ± 0.002 |
@@ -174,13 +175,16 @@ trained on every week before it with 5 seeds, and the inputs already contain the
 
 | | Copy last week | LightGBM without push inputs | LightGBM, all 30 (submitted) | GNN on users and repositories |
 |---|---|---|---|---|
-| Score | 0.345 | 0.410 ± 0.006 | 0.409 ± 0.002 | 0.400 ± 0.025 |
+| Without push | 0.345 | 0.410 ± 0.006 | 0.409 ± 0.002 | 0.400 ± 0.025 |
+| All six | 0.319 | 0.334 ± 0.004 | 0.372 ± 0.006 | 0.367 ± 0.022 |
 
-The order is the same as on the validation weeks, with all scores about 0.02 lower. On this
-week the GNN's score moves between 0.358 and 0.422 over the 5 seeds. In the first three
-seeds, the share of users it predicts as 1 changes a lot (open_pr between 3% and 14%, with 7%
-in the labels), so the same thresholds give very different predictions. Removing pushes from
-all its data does not change this, so the push outage is not the main cause.
+LightGBM, the GNN and copying last week keep their order from the validation weeks. Without
+push, all scores are about 0.02 lower. Over all six they are about 0.14 lower, which comes
+from push: only 5% of users push in this week, against 35% in early October. On this week
+the GNN's score without push moves between 0.358 and 0.422 over the 5 seeds. In the first
+three seeds, the share of users it predicts as 1 changes a lot (open_pr between 3% and 14%,
+with 7% in the labels), so the same thresholds give very different predictions. Removing
+pushes from all its data does not change this, so the push outage is not the main cause.
 
 ## Reference week
 
