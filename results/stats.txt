@@ -1,0 +1,66 @@
+Rows and edges in the last 90 days
+2026-10-24: 207,425 rows become 37,482 user-repo edges
+
+Cohort users per repository, last 90 days
+2026-10-03: repos with one cohort user 98.8%, users sharing no repo 89.0%, positive labels in a known repo 85.5%
+2026-10-10: repos with one cohort user 98.8%, users sharing no repo 88.5%, positive labels in a known repo 85.1%
+2026-10-17: repos with one cohort user 98.7%, users sharing no repo 88.1%, positive labels in a known repo 84.7%
+2026-10-24: repos with one cohort user 98.7%, users sharing no repo 87.9%, positive labels in a known repo 85.7%
+
+User 104638223706207 at 2026-10-24
+github_user_id                104638223706207
+activity                                     
+open_pr_1d                                0.0
+open_issue_1d                             0.0
+issue_comment_1d                          0.0
+pr_review_1d                              0.0
+pr_review_comment_1d                      0.0
+push_1d                                   0.0
+open_pr_7d                                0.0
+open_issue_7d                             0.0
+issue_comment_7d                          0.0
+pr_review_7d                              0.0
+pr_review_comment_7d                      0.0
+push_7d                                   3.0
+open_pr_28d                               0.0
+open_issue_28d                            0.0
+issue_comment_28d                         0.0
+pr_review_28d                             0.0
+pr_review_comment_28d                     1.0
+push_28d                                  8.0
+open_pr_90d                               0.0
+open_issue_90d                            0.0
+issue_comment_90d                         0.0
+pr_review_90d                             0.0
+pr_review_comment_90d                     2.0
+push_90d                                 18.0
+open_pr_days_since                       90.0
+open_issue_days_since                    90.0
+issue_comment_days_since                 90.0
+pr_review_days_since                     90.0
+pr_review_comment_days_since             26.2
+push_days_since                           2.1
+
+Hours without pushes since 2026-10-26: 383 of 455
+
+Users who push in the next week
+2026-10-03: 35.4%
+2026-10-10: 35.6%
+2026-10-17: 32.3%
+2026-10-24: 18.3%
+2026-10-31: 5.4%
+
+Training weeks
+all 30 weeks: 30 weeks, 223,718 examples, 177,438 positive labels, 74,855 without push
+without Jun to Aug: 17 weeks, 108,641 examples, 124,727 positive labels, 61,477 without push
+first 13 (Mar to May): 13 weeks, 81,200 examples, 104,975 positive labels, 50,400 without push
+last 13 (Jul to Sep): 13 weeks, 107,695 examples, 48,844 positive labels, 18,406 without push
+last 4: 4 weeks, 27,441 examples, 19,752 positive labels, 11,077 without push
+
+LightGBM thresholds on the validation weeks
+open_pr: threshold 0.25, F1 at 0.5 0.340, F1 at threshold 0.445
+open_issue: threshold 0.20, F1 at 0.5 0.391, F1 at threshold 0.489
+issue_comment: threshold 0.30, F1 at 0.5 0.373, F1 at threshold 0.427
+pr_review: threshold 0.30, F1 at 0.5 0.328, F1 at threshold 0.420
+pr_review_comment: threshold 0.35, F1 at 0.5 0.312, F1 at threshold 0.378
+push: threshold 0.40, F1 at 0.5 0.639, F1 at threshold 0.648

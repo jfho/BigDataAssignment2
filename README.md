@@ -104,8 +104,10 @@ from 0.10 to 0.60 in steps of 0.05, and each week is scored with thresholds pick
 other three. Every model runs with 5 seeds, except the GNN on the 8 tables with 3, because
 one fit takes about 25 minutes.
 
-GH Archive has recorded almost no push events since 2026-10-26. The hour 2026-10-28 12:00,
-for example, contains no PushEvent at all. An activity that GH Archive is missing in the
+GH Archive itself records less over the year. Its plain hour files shrink from about 38 MB in
+spring to 11 MB in October (file sizes of 8 sample hours per month). It has recorded almost
+no push events since 2026-10-26. The hour 2026-10-28 12:00, for example, contains no
+PushEvent at all. An activity that GH Archive is missing in the
 test week is not scored, and the push labels of the latest weeks are broken anyway. So I
 compare designs on the score of the other five activities, the same as `evaluate.py --skip
 push`, and report the score over all six as well.
@@ -235,6 +237,11 @@ often each label is 1 per week, late arrival per activity, F1 against the decisi
 and LightGBM's feature importance. The schema graph is written by hand in `schema.dot` and
 rendered when Graphviz is installed.
 
+`python stats.py` prints the other numbers in my slides to `results/stats.txt`: graph size,
+how many cohort users share a repository, the example user's features, hours without pushes,
+push label rates, training examples and positive labels per set of training weeks, and the
+thresholds with their F1.
+
 ## Tests
 
 `pytest` checks that the user rule gives exactly the users of `test_input.csv`, that the
@@ -256,3 +263,4 @@ that my score matches `evaluate.py`.
 | `predict.py` | writes and checks the submission file |
 | `compare.py` | the experiments in the results |
 | `figures.py` | the figures |
+| `stats.py` | the other numbers in the slides |

@@ -88,16 +88,19 @@ def features(events):
                  "last 90 days")
 
 
-def window(events):
+def training_windows(events):
     weeks = weekly_cutoffs(events, VAL_WEEKS[0])
-    summer = [t for t in weeks if t.month in (6, 7, 8)]
-    windows = {
+    return {
         "all 30 weeks": weeks,
-        "without Jun to Aug": [t for t in weeks if t not in summer],
+        "without Jun to Aug": [t for t in weeks if t.month not in (6, 7, 8)],
         "first 13 (Mar to May)": weeks[:13],
         "last 13 (Jul to Sep)": weeks[-13:],
         "last 4": weeks[-4:],
     }
+
+
+def window(events):
+    windows = training_windows(events)
     return table({name: seeds(name, lgbm, events, cutoffs) for name, cutoffs in windows.items()}, "all 30 weeks")
 
 
